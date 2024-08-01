@@ -19,6 +19,8 @@ public class RockTheVote {
 
     private bool isRTVEnabled = true;
 
+    private bool isMapChanging = false;
+
     public RockTheVote(CSSMapChooser plugin, Dictionary<string, MapData> mapDataDict) {
         this.plugin = plugin;
         this.mapDataDict = mapDataDict;
@@ -26,11 +28,20 @@ public class RockTheVote {
         plugin.AddCommand("css_rtv", "Vote for initiating the RTV", CommandRTV);
         plugin.AddCommand("css_enablertv", "Enable RTV", CommandEnableRTV);
         plugin.AddCommand("css_disablertv", "Enable RTV", CommandDisableRTV);
+
+        plugin.RegisterListener<Listeners.OnMapStart>((mapName) => {
+            isMapChanging = false;
+        });
     }
 
     private void CommandRTV(CCSPlayerController? client, CommandInfo info) {
         if(client == null)
             return;
+
+        if(isMapChanging) {
+            client.PrintToChat($"{plugin.CHAT_PREFIX} Map is changing!");
+            return;
+        }
 
         VoteManager? voteManager = plugin.voteManager;
 
@@ -99,6 +110,11 @@ public class RockTheVote {
         if(client == null)
             return;
 
+        if(isMapChanging) {
+            client.PrintToChat($"{plugin.CHAT_PREFIX} Map is changing!");
+            return;
+        }
+
         VoteManager? voteManager = plugin.voteManager;
 
         if(voteManager != null && voteManager.voteProgress == VoteManager.VoteProgress.VOTE_INITIATING ||
@@ -128,6 +144,7 @@ public class RockTheVote {
 
     private void InitiateRTV(VoteManager? voteManager) {
         if(voteManager != null && voteManager.nextMap != null) {
+            isMapChanging = true;
             ForceChangeMapWithRTV();
             ResetRTVStatus();
             return;
