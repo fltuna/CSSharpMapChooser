@@ -322,7 +322,7 @@ public partial class CSSMapChooser : BasePlugin
 
     private void CreateMapVoteTimer() {
         mapVoteTimer = AddTimer(1.0F, () => {
-            if((int)PluginSettings.GetInstance().cssmcMapVoteStartTime.Value < timeleft)
+            if((int)PluginSettings.GetInstance().cssmcMapVoteStartTime.Value < timeleft || mp_timelimit?.GetPrimitiveValue<float>() <= 0.0)
                 return;
             
             if(voteManager != null) {                
