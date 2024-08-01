@@ -14,7 +14,7 @@ public class Nomination {
     }
 
     private CSSMapChooser plugin;
-    private MapConfig mapConfig;
+    private Dictionary<string, MapData> mapDataDict;
 
     enum NominationStatus {
         NOMINATION_SUCCESS,
@@ -23,9 +23,9 @@ public class Nomination {
         NOMINATION_FORCED,
     }
 
-    public Nomination(CSSMapChooser plugin, MapConfig mapConfig) {
+    public Nomination(CSSMapChooser plugin, Dictionary<string, MapData> mapDataDict) {
         this.plugin = plugin;
-        this.mapConfig = mapConfig;
+        this.mapDataDict = mapDataDict;
         plugin.AddCommand("css_nominate", "nominate the specified map", CommandNominate);
         plugin.AddCommand("css_nominate_addmap", "Insert map to nomination", CommandNominateAddMap);
         plugin.AddCommand("css_nominate_removemap", "Remove map from nomination", CommandNominateRemoveMap);
@@ -45,7 +45,7 @@ public class Nomination {
 
         string mapName = info.GetArg(1);
 
-        foreach(MapData mapData in mapConfig.GetMapDataList()) {
+        foreach(MapData mapData in mapDataDict.Values) {
             if(mapData.MapName.Equals(mapName, StringComparison.OrdinalIgnoreCase)) {
                 newNominationMap = mapData;
                 break;
@@ -53,7 +53,7 @@ public class Nomination {
         }
 
         
-        List<MapData> foundMaps = mapConfig.GetMapDataList().FindAll(v => v.MapName.Contains(mapName, StringComparison.OrdinalIgnoreCase));
+        List<MapData> foundMaps = mapDataDict.Values.ToList().FindAll(v => v.MapName.Contains(mapName, StringComparison.OrdinalIgnoreCase));
 
         if(foundMaps.Count() == 0 && !mapName.Equals("")) {
             client.PrintToChat($"{plugin.CHAT_PREFIX} No maps found with {mapName}");
@@ -133,14 +133,14 @@ public class Nomination {
 
         string mapName = info.GetArg(1);
 
-        foreach(MapData mapData in mapConfig.GetMapDataList()) {
+        foreach(MapData mapData in mapDataDict.Values) {
             if(mapData.MapName.Equals(mapName, StringComparison.OrdinalIgnoreCase)) {
                 newNominationMap = mapData;
                 break;
             }
         }
         
-        List<MapData> foundMaps = mapConfig.GetMapDataList().FindAll(v => v.MapName.Contains(mapName, StringComparison.OrdinalIgnoreCase));
+        List<MapData> foundMaps = mapDataDict.Values.ToList().FindAll(v => v.MapName.Contains(mapName, StringComparison.OrdinalIgnoreCase));
 
         if(foundMaps.Count() == 0 && !mapName.Equals("")) {
             client.PrintToChat($"{plugin.CHAT_PREFIX} No maps found with {mapName}");
@@ -210,7 +210,7 @@ public class Nomination {
         CenterHtmlMenu menu = new CenterHtmlMenu("Nomination menu", plugin);
 
         if(!doForceNominate) {
-            foreach(MapData map in mapConfig.GetMapDataList()) {
+            foreach(MapData map in mapDataDict.Values) {
                 menu.AddMenuOption(truncateString(map.MapName), (controller, option) => {
                     controller.ExecuteClientCommandFromServer($"css_nominate {option.Text}");
                     MenuManager.CloseActiveMenu(controller);
@@ -218,7 +218,7 @@ public class Nomination {
             }
         }
         else {
-            foreach(MapData map in mapConfig.GetMapDataList()) {
+            foreach(MapData map in mapDataDict.Values) {
                 menu.AddMenuOption(truncateString(map.MapName), (controller, option) => {
                     controller.ExecuteClientCommandFromServer($"css_nominate_addmap {option.Text}");
                     MenuManager.CloseActiveMenu(controller);
@@ -326,7 +326,7 @@ public class Nomination {
 
         client.PrintToChat($"{plugin.CHAT_PREFIX} See client console to map list.");
 
-        foreach(MapData map in mapConfig.GetMapDataList()) {
+        foreach(MapData map in mapDataDict.Values) {
             client.PrintToConsole(map.MapName);
         }
 

@@ -1,13 +1,13 @@
 namespace CSSMapChooser;
 
-public class MapData {
+public class MapData
+{
+    public string MapName { get; }
+    public MapProperties MapProperties { get; }
 
-    public readonly string MapName;
-
-    public readonly bool isWorkshopMap;
-
-    public MapData(string MapName, bool isWorkshopMap) {
-        this.MapName = MapName;
-        this.isWorkshopMap = isWorkshopMap;
+    public MapData(string mapName, MapProperties properties)
+    {
+        MapName = mapName;
+        MapProperties = properties;
     }
 }

@@ -12,16 +12,16 @@ namespace CSSMapChooser;
 public class RockTheVote {
     
     private readonly CSSMapChooser plugin;
-    private MapConfig mapConfig;
+    private Dictionary<string, MapData> mapDataDict;
 
     private List<CCSPlayerController> votedPlayers = new ();
     private int playersRequiredToRestart = 0;
 
     private bool isRTVEnabled = true;
 
-    public RockTheVote(CSSMapChooser plugin, MapConfig mapConfig) {
+    public RockTheVote(CSSMapChooser plugin, Dictionary<string, MapData> mapDataDict) {
         this.plugin = plugin;
-        this.mapConfig = mapConfig;
+        this.mapDataDict = mapDataDict;
         plugin.AddCommand("css_forcertv", "Initiate the force rtv", CommandForceRTV);
         plugin.AddCommand("css_rtv", "Vote for initiating the RTV", CommandRTV);
         plugin.AddCommand("css_enablertv", "Enable RTV", CommandEnableRTV);
@@ -133,7 +133,7 @@ public class RockTheVote {
             return;
         }
 
-        VoteManager newVoteManager = new VoteManager(mapConfig.GetMapDataList(), plugin, true);
+        VoteManager newVoteManager = new VoteManager(mapDataDict, plugin, true);
 
         plugin.setVoteManager(newVoteManager);
 

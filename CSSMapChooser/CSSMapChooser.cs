@@ -20,7 +20,7 @@ public partial class CSSMapChooser : BasePlugin
 
     public override string ModuleDescription => "CounterStrikeSharp implementation of map chooser";
 
-    private MapConfig mapConfig = default!;
+    public Dictionary<string, MapData> mapDataDict {get; private set;} = new();
 
     private ConVar? mp_timelimit = null;
 
@@ -55,9 +55,6 @@ public partial class CSSMapChooser : BasePlugin
     {
         Logger.LogInformation("Plugin load started");
 
-        Logger.LogInformation("Initializing the MapConfig instance");
-        mapConfig = new MapConfig(this);
-
         Logger.LogInformation("Initializing the plugin settings instance");
         new PluginSettings(this);
 
@@ -81,12 +78,6 @@ public partial class CSSMapChooser : BasePlugin
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
         RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
 
-        Logger.LogInformation("Initializing Nomination module");
-        nominationModule = new Nomination(this, mapConfig);
-
-        Logger.LogInformation("Initializing Nomination RTV module");
-        rockTheVoteModule = new RockTheVote(this, mapConfig);
-
         Logger.LogInformation("Adding commands...");
         AddCommand("css_nextmap", "shows nextmap information", CommandNextMap);
         AddCommand("css_timeleft", "shows current map limit time", CommandTimeLeft);
@@ -98,9 +89,28 @@ public partial class CSSMapChooser : BasePlugin
         AddCommandListener("say_team", ChatCommandTrigger, HookMode.Pre);
     }
 
+    private bool loadMapData() {
+        string mapsTxtLocation = Path.Combine(ModuleDirectory + "\\maps.txt");
+
+        if(!Path.Exists(mapsTxtLocation)) {
+            Logger.LogError("Failed to find maps.txt! If you haven't created yet, please create maps.txt in the {moduleDir} directory.", ModuleDirectory);
+            return false;
+        }
+
+        mapDataDict = MapDataParser.ParseConfig(mapsTxtLocation);
+        return true;
+    }
+
     public override void OnAllPluginsLoaded(bool hotReload)
     {
-        mapConfig.ReloadConfigData();
+        Logger.LogInformation("Loading MapData. This is a late load.");
+        loadMapData();
+
+        Logger.LogInformation("Initializing Nomination module. This is a late load.");
+        nominationModule = new Nomination(this, mapDataDict);
+
+        Logger.LogInformation("Initializing Nomination RTV module. This is a late load.");
+        rockTheVoteModule = new RockTheVote(this, mapDataDict);
     }
 
     public override void Unload(bool hotReload)
@@ -164,8 +174,9 @@ public partial class CSSMapChooser : BasePlugin
 
             if(nextMap == null) {
                 Random rand = new Random();
-                List<MapData> mapData = mapConfig.GetMapDataList();
-                ChangeToNextMap(mapData[rand.Next(mapData.Count())]);
+                int index = rand.Next(mapDataDict.Count());
+                MapData data = mapDataDict.ElementAt(index).Value;
+                ChangeToNextMap(data);
             }
             else {
                 ChangeToNextMap(nextMap);
@@ -214,9 +225,9 @@ public partial class CSSMapChooser : BasePlugin
         string nextMapInfo = "Pending vote";
 
         if (voteManager != null) {
-            MapData? mapData = voteManager.nextMap;
-            if (mapData != null) {
-                nextMapInfo = mapData.MapName;
+            MapData? mapDataDict = voteManager.nextMap;
+            if (mapDataDict != null) {
+                nextMapInfo = mapDataDict.MapName;
             }
         }
 
@@ -267,7 +278,7 @@ public partial class CSSMapChooser : BasePlugin
     public void ChangeToNextMap(MapData nextMap) {
         string serverCmd = "";
 
-        if(nextMap.isWorkshopMap) {
+        if(nextMap.MapProperties.GetValue<int>("workshop") == 1) {
             // TODO: get workshop id for executing host_workshop_map instead of ds_workshop_changelevel
             // serverCmd += $"host_workshop_map {}";
             
@@ -334,7 +345,7 @@ public partial class CSSMapChooser : BasePlugin
                 }
             }
 
-            voteManager = new VoteManager(mapConfig.GetMapDataList(), this, false);
+            voteManager = new VoteManager(mapDataDict, this, false);
             
             voteManager.StartVoteProcess();
         }, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);

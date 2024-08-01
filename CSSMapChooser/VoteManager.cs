@@ -22,7 +22,7 @@ public class VoteManager {
 
     private bool isActivatedByRTV = false;
 
-    private List<MapData> mapList = new ();
+    private Dictionary<string, MapData> mapDataDict = new ();
 
 
     public MapData? nextMap {get; private set;} = null;
@@ -42,8 +42,8 @@ public class VoteManager {
     private string TEMP_VOTE_MAP_EXTEND_MAP = "Extend Current Map";
 
 
-    public VoteManager(List<MapData> mapList, CSSMapChooser plugin, bool isActivatedByRTV = false) {
-        this.mapList = mapList;
+    public VoteManager(Dictionary<string, MapData> mapDataDict, CSSMapChooser plugin, bool isActivatedByRTV = false) {
+        this.mapDataDict = mapDataDict;
         this.plugin = plugin;
         this.isActivatedByRTV = isActivatedByRTV;
     }
@@ -87,11 +87,11 @@ public class VoteManager {
         votingMaps.Clear();
 
         if(isActivatedByRTV) {
-            votingMaps.Add(new MapVoteData(new MapData(TEMP_VOTE_MAP_DONT_CHANGE, false)));
+            votingMaps.Add(new MapVoteData(new MapData(TEMP_VOTE_MAP_DONT_CHANGE, new MapProperties(new Dictionary<string, string>()))));
         }
         else {
             if(plugin.extendsCount < PluginSettings.GetInstance().cssmcMapVoteAvailableExtends.Value) {
-                votingMaps.Add(new MapVoteData(new MapData(TEMP_VOTE_MAP_EXTEND_MAP, false)));
+                votingMaps.Add(new MapVoteData(new MapData(TEMP_VOTE_MAP_EXTEND_MAP,  new MapProperties(new Dictionary<string, string>()))));
             }
         }
 
@@ -106,6 +106,7 @@ public class VoteManager {
                 .Where(v => v.isForceNominate)
                 .ToList();
 
+            SimpleLogging.LogDebug("Adding admin nominated maps to voting list");
             foreach(NominationData nominated in adminNominations) {
                 if(votingMaps.Count() >= voteTargetMapCount)
                     break;
@@ -113,6 +114,7 @@ public class VoteManager {
                 votingMaps.Add(new MapVoteData(nominated.mapData));
             }
 
+            SimpleLogging.LogDebug("Adding nominated maps to voting list");
             foreach(NominationData nominated in sortedNominatedMaps) {
                 if(votingMaps.Count() >= voteTargetMapCount)
                     break;
@@ -131,9 +133,17 @@ public class VoteManager {
                 votingMaps.Add(new MapVoteData(nominated.mapData));
             }
 
+            SimpleLogging.LogDebug("Adding random maps to fill the voting list");
+
+            int loops = 0;
             while(votingMaps.Count() < voteTargetMapCount) {
-                int index = random.Next(mapList.Count());
-                MapData pickedMap = mapList[index];
+                loops++;
+                if(loops > 100) {
+                    break;
+                }
+                int index = random.Next(mapDataDict.Count());
+                MapData pickedMap = mapDataDict.ElementAt(index).Value;
+                SimpleLogging.LogTrace($"Map selected {pickedMap.MapName}");
 
                 bool isAlreadyNominated = false;
                 bool isCurrentMap = false;
@@ -144,6 +154,7 @@ public class VoteManager {
                     }
                     else if(map.mapData.MapName.Equals(Server.MapName, StringComparison.OrdinalIgnoreCase)) {
                         isCurrentMap = true;
+                        break;
                     }
                 }
 
@@ -164,7 +175,7 @@ public class VoteManager {
 
         SimpleLogging.LogTrace("Vote targets:");
         foreach(MapVoteData maps in votingMaps) {
-            SimpleLogging.LogTrace($"Name: {maps.mapData.MapName}, workshop: {maps.mapData.isWorkshopMap}");
+            SimpleLogging.LogTrace($"Name: {maps.mapData.MapName}, workshop: {maps.mapData.MapProperties.GetValue<int>("workshop")}");
         }
 
         foreach(CCSPlayerController client in Utilities.GetPlayers()) {
@@ -204,7 +215,7 @@ public class VoteManager {
         SimpleLogging.LogDebug("Vote ended");
         SimpleLogging.LogTrace("Vote results:");
         foreach(MapVoteData maps in votingMaps) {
-            SimpleLogging.LogTrace($"Votes: {maps.GetVoteCounts()}, Name: {maps.mapData.MapName}, workshop: {maps.mapData.isWorkshopMap}");
+            SimpleLogging.LogTrace($"Votes: {maps.GetVoteCounts()}, Name: {maps.mapData.MapName}, workshop: {maps.mapData.MapProperties.GetValue<int>("workshop")}");
         }
 
         List<MapVoteData> winners = PickVoteWinningMaps();
@@ -212,7 +223,7 @@ public class VoteManager {
         SimpleLogging.LogTrace($"Winner count: {winners.Count()}");
 
         foreach(MapVoteData winMap in winners) {
-            SimpleLogging.LogTrace($"Votes: {winMap.GetVoteCounts()}, Name: {winMap.mapData.MapName}, workshop: {winMap.mapData.isWorkshopMap}");
+            SimpleLogging.LogTrace($"Votes: {winMap.GetVoteCounts()}, Name: {winMap.mapData.MapName}, workshop: {winMap.mapData.MapProperties.GetValue<int>("workshop")}");
         }
 
         int totalVotes = getTotalVotes();
