@@ -84,6 +84,8 @@ public partial class CSSMapChooser : BasePlugin
         AddCommand("css_revote", "Re-vote the current vote.", CommandReVote);
 
         AddCommand("css_cancelvote", "Cancel the current vote", CommandCancelVote);
+        AddCommand("css_resetnextmap", "Reset the next map data.", CommandResetNextMap);
+        AddCommand("css_resetnm", "Reset the next map data.", CommandResetNextMap);
 
         AddCommandListener("say", ChatCommandTrigger, HookMode.Pre);
         AddCommandListener("say_team", ChatCommandTrigger, HookMode.Pre);
@@ -198,6 +200,21 @@ public partial class CSSMapChooser : BasePlugin
         }
 
         voteManager.CancelVote(client);
+    }
+
+
+    [RequiresPermissions(@"css/map")]
+    private void CommandResetNextMap(CCSPlayerController? client, CommandInfo info) {
+        if(client == null)
+            return;
+
+        if(voteManager == null) {
+
+            client.PrintToChat($"{CHAT_PREFIX} There is no active vote!");
+            return;
+        }
+
+        voteManager.ResetNextMap(client);
     }
 
 

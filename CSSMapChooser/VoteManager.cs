@@ -49,7 +49,7 @@ public class VoteManager {
     }
 
     public void StartVoteProcess() {
-        if(voteProgress != VoteProgress.VOTE_PENDING)
+        if(voteProgress != VoteProgress.VOTE_PENDING && voteProgress != VoteProgress.VOTE_FINISHED)
             throw new InvalidOperationException("Vote is already in progress and cannot be start twice!");
         
         voteProgress = VoteProgress.VOTE_INITIATING;
@@ -252,6 +252,7 @@ public class VoteManager {
             SimpleLogging.LogDebug($"No map got over {PluginSettings.GetInstance().cssmcMapVoteRunoffThreshold.Value * 100:F0}% of votes, starting runoff vote");
             Server.PrintToChatAll($"{plugin.CHAT_PREFIX} No map got over {PluginSettings.GetInstance().cssmcMapVoteRunoffThreshold.Value * 100:F0}% of votes, starting runoff vote");
             runoffVoteMaps = winners;
+            voteProgress = VoteProgress.VOTE_PENDING;
             StartVoteProcess();
             return;
         }
@@ -291,6 +292,25 @@ public class VoteManager {
                 plugin.ChangeToNextMap(nextMap);
             }, TimerFlags.STOP_ON_MAPCHANGE);
         }
+    }
+
+    public void ResetNextMap(CCSPlayerController? client) {
+        SimpleLogging.LogDebug("Resetting the next map");
+        if(client != null) {
+            plugin.Logger.LogInformation($"Admin {client.PlayerName} has reset the next map.");
+            Server.PrintToChatAll($"{plugin.CHAT_PREFIX} Admin {client.PlayerName} has reset the next map.");
+        }
+        else {
+            plugin.Logger.LogInformation($"Admin has reset the next map.");
+            Server.PrintToChatAll($"{plugin.CHAT_PREFIX} Admin has reset the next map.");
+        }
+
+        if((int)PluginSettings.GetInstance().cssmcMapVoteStartTime.Value < plugin.timeleft) {
+            voteProgress = VoteProgress.VOTE_PENDING;
+        } else {
+            voteProgress = VoteProgress.VOTE_FINISHED;
+        }
+        nextMap = null;
     }
 
     public void CancelVote(CCSPlayerController? client) {
