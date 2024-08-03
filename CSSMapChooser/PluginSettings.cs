@@ -25,7 +25,7 @@ namespace CSSMapChooser {
         */
         public FakeConVar<float> cssmcRTVMapChangingDelay = new("cssmc_rtv_map_changing_delay", "When map changes after map vote with rtv.", 10.0F);
         public FakeConVar<bool> cssmcRTVMapChangingAfterRoundEnd = new("cssmc_rtv_map_changing_after_round_end", "Should change map after round end?", true);
-        public FakeConVar<float> cssmcRTVVoteThreshold = new("cssmc_rtv_vote_threshold", "Threshold of RTV vote", 0.7F, ConVarFlags.FCVAR_NONE, new RangeValidator<float>(0.0F, 1.0F));
+        public FakeConVar<float> cssmcRTVVoteThreshold = new("cssmc_rtv_vote_threshold", "Threshold of RTV vote", 0.5F, ConVarFlags.FCVAR_NONE, new RangeValidator<float>(0.0F, 1.0F));
 
         /*
         * Voting general
